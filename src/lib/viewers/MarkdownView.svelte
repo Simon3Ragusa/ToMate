@@ -199,11 +199,11 @@
   }
 
   function keys(e: KeyboardEvent) {
-    if (e.ctrlKey && e.key === "s") {
+    if ((e.ctrlKey || e.metaKey) && e.key === "s") {
       e.preventDefault();
       save();
     }
-    if (e.ctrlKey && e.key === "e") {
+    if ((e.ctrlKey || e.metaKey) && e.key === "e") {
       e.preventDefault();
       mode = mode === "read" ? "split" : "read";
     }
@@ -218,7 +218,7 @@
       <button class:on={mode === m} onclick={() => (mode = m as Mode)}>{label}</button>
     {/each}
   </div>
-  <span class="status">{mode === "read" ? "Ctrl E to edit" : saved ? "Saved" : "Editing…"}</span>
+  <span class="status">{mode === "read" ? "⌘/Ctrl E to edit" : saved ? "Saved" : "Editing…"}</span>
 </div>
 
 <div class="panes" class:split={mode === "split"}>

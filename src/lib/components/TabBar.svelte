@@ -3,7 +3,7 @@
   import { app } from "$lib/state.svelte";
 
   function keys(e: KeyboardEvent) {
-    if (!e.ctrlKey || !app.tabs.length) return;
+    if (!(e.ctrlKey || e.metaKey) || !app.tabs.length) return;
     if (e.key.toLowerCase() === "w" && app.current) {
       e.preventDefault();
       app.closeTab(app.current.path);
@@ -38,7 +38,7 @@
         <span class="name">{t.name}</span>
         <button
           class="x"
-          title="Close (Ctrl W)"
+          title="Close (⌘/Ctrl W)"
           onclick={(e) => {
             e.stopPropagation();
             app.closeTab(t.path);
