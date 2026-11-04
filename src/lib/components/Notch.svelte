@@ -199,7 +199,7 @@
     border-radius: 0 0 15px 15px;
     background: var(--notch-bg);
     color: #fff;
-    cursor: default;
+    cursor: pointer;
     /* A slight overshoot gives the "springy" island feel. */
     transition:
       width 0.42s var(--ease-spring),

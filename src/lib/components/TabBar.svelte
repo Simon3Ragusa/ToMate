@@ -71,7 +71,7 @@
     border-right: 1px solid var(--border);
     color: var(--muted);
     font-size: 12.5px;
-    cursor: default;
+    cursor: pointer;
     user-select: none;
   }
   .tab:hover {

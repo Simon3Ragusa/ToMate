@@ -225,7 +225,7 @@
     font-weight: 600;
   }
   .seg button:disabled {
-    cursor: default;
+    cursor: not-allowed;
   }
 
   /* Timeline */

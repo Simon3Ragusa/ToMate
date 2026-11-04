@@ -233,7 +233,7 @@
           {#each meta as [k, v]}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
         </dl>
       {/if}
-      <article class="prose" bind:this={body} onclick={click} ondblclick={dbl} title="Double-click to edit">{@html html}</article>
+      <article class="prose clickable" bind:this={body} onclick={click} ondblclick={dbl} title="Double-click to edit">{@html html}</article>
       <Backlinks {entry} />
     </div>
   {/if}
