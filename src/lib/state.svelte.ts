@@ -4,6 +4,7 @@ import { dayKey } from "./calendar";
 import { index } from "./search.svelte";
 import { workspace } from "./workspace.svelte";
 import { describe } from "./errors";
+import { recentWorkspaces } from "./recent-workspaces.svelte";
 
 const PINS_FILE = ".board/pins.json";
 
@@ -58,6 +59,7 @@ class AppState {
 
   async open(path: string) {
     this.root = await api.openWorkspace(path);
+    recentWorkspaces.add(this.root);
     this.current = null;
     this.tabs = [];
     this.previewTab = null;
