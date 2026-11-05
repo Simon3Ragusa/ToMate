@@ -109,7 +109,7 @@
     font: inherit;
     font-size: 13px;
     text-align: left;
-    cursor: default;
+    cursor: pointer;
   }
   .row:hover {
     background: var(--hover);

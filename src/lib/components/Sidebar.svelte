@@ -51,7 +51,7 @@
     <button class:active={!app.current && app.view === "search"} onclick={() => app.show("search")}>
       <svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h6M2.5 12h4" stroke="currentColor" stroke-width="1.2" /><circle cx="11.5" cy="10.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2" /><path d="M13.3 12.3L15 14" stroke="currentColor" stroke-width="1.2" /></svg>
       Search
-      <kbd>Ctrl ⇧ F</kbd>
+      <kbd>⌘/Ctrl ⇧ F</kbd>
     </button>
     {#if workspace.config.modules.findings}
     <button class:active={!app.current && app.view === "findings"} onclick={() => app.show("findings")}>
@@ -69,7 +69,7 @@
     <button class="search" onclick={onsearch}>
       <svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.2" /><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.2" /></svg>
       Go to file
-      <kbd>Ctrl P</kbd>
+      <kbd>⌘/Ctrl P</kbd>
     </button>
   </nav>
 

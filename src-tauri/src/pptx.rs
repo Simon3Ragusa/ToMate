@@ -10,6 +10,7 @@ use tauri::State;
 
 use crate::workspace::{Workspace, BOARD_DIR};
 
+#[cfg(windows)]
 const SCRIPT: &str = r#"
 param([string]$src, [string]$dst)
 $ErrorActionPreference = 'Stop'
@@ -24,6 +25,58 @@ try {
   [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($ppt)
 }
 "#;
+
+#[cfg(target_os = "macos")]
+const APPLESCRIPT: &str = r#"
+on run argv
+  set src to POSIX file (item 1 of argv)
+  set dst to POSIX file (item 2 of argv)
+  tell application "Microsoft PowerPoint"
+    set deck to open src
+    save deck in dst as save as PDF
+    close deck saving no
+  end tell
+end run
+"#;
+
+#[cfg(target_os = "macos")]
+fn convert_with_powerpoint(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
+    let out = Command::new("osascript")
+        .args(["-e", APPLESCRIPT, "--"])
+        .arg(src)
+        .arg(dst)
+        .output()
+        .map_err(|e| e.to_string())?;
+    if out.status.success() && dst.exists() {
+        Ok(())
+    } else {
+        Err(String::from_utf8_lossy(&out.stderr).trim().to_owned())
+    }
+}
+
+#[cfg(not(windows))]
+fn convert_with_libreoffice(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
+    let cache = dst.parent().ok_or("Invalid cache path")?;
+    let program = if cfg!(target_os = "macos") {
+        "/Applications/LibreOffice.app/Contents/MacOS/soffice"
+    } else {
+        "soffice"
+    };
+    let out = Command::new(program)
+        .args(["--headless", "--convert-to", "pdf", "--outdir"])
+        .arg(cache)
+        .arg(src)
+        .output()
+        .map_err(|e| format!("LibreOffice is not installed: {e}"))?;
+    let produced = cache.join(src.file_stem().ok_or("Invalid slide filename")?).with_extension("pdf");
+    if !out.status.success() || !produced.exists() {
+        return Err(String::from_utf8_lossy(&out.stderr).trim().to_owned());
+    }
+    if produced != dst {
+        fs::rename(produced, dst).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
 
 /// Returns the workspace-relative path of the cached PDF.
 #[tauri::command]
@@ -46,9 +99,15 @@ pub async fn pptx_to_pdf(ws: State<'_, Workspace>, path: String) -> Result<Strin
         }
     }
 
-    let script = cache.join("convert.ps1");
-    fs::write(&script, SCRIPT).map_err(|e| e.to_string())?;
+    #[cfg(windows)]
+    let script = {
+        let script = cache.join("convert.ps1");
+        fs::write(&script, SCRIPT).map_err(|e| e.to_string())?;
+        script
+    };
     let out = tauri::async_runtime::spawn_blocking(move || {
+        #[cfg(windows)]
+        {
         let mut cmd = Command::new("powershell");
         cmd.args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"])
             .arg(&script)
@@ -59,17 +118,27 @@ pub async fn pptx_to_pdf(ws: State<'_, Workspace>, path: String) -> Result<Strin
             use std::os::windows::process::CommandExt;
             cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
         }
-        cmd.output()
+        return cmd.output().map_err(|e| e.to_string()).and_then(|out| {
+            if out.status.success() { Ok(()) } else { Err(String::from_utf8_lossy(&out.stderr).trim().to_owned()) }
+        });
+        }
+        #[cfg(target_os = "macos")]
+        {
+            convert_with_powerpoint(&src, &dst).or_else(|powerpoint| {
+                convert_with_libreoffice(&src, &dst)
+                    .map_err(|libreoffice| format!("PowerPoint: {powerpoint}; LibreOffice: {libreoffice}"))
+            })
+        }
+        #[cfg(all(not(windows), not(target_os = "macos")))]
+        {
+            convert_with_libreoffice(&src, &dst)
+        }
     })
     .await
-    .map_err(|e| e.to_string())?
     .map_err(|e| e.to_string())?;
 
-    if !out.status.success() {
-        return Err(format!(
-            "PowerPoint conversion failed: {}",
-            String::from_utf8_lossy(&out.stderr).trim()
-        ));
+    if let Err(message) = out {
+        return Err(format!("Slide conversion failed: {message}"));
     }
     Ok(rel)
 }

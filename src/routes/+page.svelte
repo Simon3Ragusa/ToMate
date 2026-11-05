@@ -71,11 +71,11 @@
   }
 
   function keys(e: KeyboardEvent) {
-    if (e.ctrlKey && e.key.toLowerCase() === "p" && app.root) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p" && app.root) {
       e.preventDefault();
       quick = !quick;
     }
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "f" && app.root) {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "f" && app.root) {
       e.preventDefault();
       app.show("search");
     }

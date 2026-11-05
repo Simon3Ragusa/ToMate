@@ -147,8 +147,31 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button {
-  cursor: default;
+/* Make every standard interactive control read as clickable on desktop. */
+button,
+a[href],
+select,
+summary,
+label[for],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+[role="button"] {
+  cursor: pointer;
+}
+
+.clickable,
+.toast {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 /* One quiet interaction language everywhere: colours ease, nothing jumps. */
@@ -359,7 +382,7 @@ kbd,
   transform: translateY(1px);
 }
 .prose .task-list-item label {
-  cursor: default;
+  cursor: pointer;
 }
 .prose .katex-display {
   overflow-x: auto;
