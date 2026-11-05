@@ -24,6 +24,7 @@
   import { getCurrentWebview } from "@tauri-apps/api/webview";
   import { api, onFsChange, parentOf } from "$lib/api";
   import { app } from "$lib/state.svelte";
+  import { recentWorkspaces } from "$lib/recent-workspaces.svelte";
   import { dnd, dropDirAt, dropFallback, setTarget, clearDrag, importDropped } from "$lib/components/dnd.svelte";
   import "../app.css";
 
@@ -38,6 +39,7 @@
   onMount(() => {
     if (isNotch) return;
     logo.init(); // the taskbar icon follows the logo style
+    recentWorkspaces.init();
     const stopNotch = startNotch();
     const unlisten = onFsChange((dirs) => app.refresh(dirs));
     const unDrop = getCurrentWebview().onDragDropEvent(({ payload: p }) => {
@@ -107,7 +109,7 @@
   </main>
 {:else}
   <div class="shell" style="grid-template-columns: {sidebarW}px 1fr">
-    <Sidebar onswitch={choose} onsearch={() => (quick = true)} />
+    <Sidebar onchoose={choose} onsearch={() => (quick = true)} />
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="resizer" style="left: {sidebarW - 3}px" onpointerdown={drag}></div>
     <main>

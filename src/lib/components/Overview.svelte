@@ -259,7 +259,7 @@
   }
   .cols {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
   }
   .cols .card {
@@ -446,6 +446,8 @@
     white-space: nowrap;
   }
   .fname {
+    flex: 0 1 45%;
+    min-width: 0;
     max-width: 45%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -485,8 +487,15 @@
   }
   .recent {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 16px;
+  }
+  .recent > li {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .recent .row {
+    overflow: hidden;
   }
   @media (max-width: 1000px) {
     .recent {

@@ -10,8 +10,29 @@
   import Pinned from "./Pinned.svelte";
   import Logo from "./Logo.svelte";
   import { findings } from "$lib/findings.svelte";
+  import { recentWorkspaces } from "$lib/recent-workspaces.svelte";
 
-  let { onswitch, onsearch }: { onswitch: () => void; onsearch: () => void } = $props();
+  let { onchoose, onsearch }: { onchoose: () => void; onsearch: () => void } = $props();
+  let switching = $state(false);
+  let workspaceButton = $state<HTMLButtonElement>();
+  let workspaceMenu = $state<HTMLDivElement>();
+
+  const nameOf = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+
+  async function openRecent(path: string) {
+    switching = false;
+    await app.run(() => app.open(path), "Couldn't open that folder");
+  }
+
+  function chooseNew() {
+    switching = false;
+    onchoose();
+  }
+
+  function outside(event: PointerEvent) {
+    const target = event.target as Node;
+    if (switching && !workspaceButton?.contains(target) && !workspaceMenu?.contains(target)) switching = false;
+  }
 
   /** New items go next to the selection (inside it if it is a folder). */
   const targetDir = $derived(app.current ? parentOf(app.current.path) : "");
@@ -23,13 +44,45 @@
   }
 </script>
 
+<svelte:window onpointerdown={outside} />
+
 <aside>
   <header>
     <Logo size={22} />
-    <button class="workspace" onclick={onswitch} title="Open another folder">
+    <button bind:this={workspaceButton} class="workspace" class:open={switching} onclick={() => (switching = !switching)} title="Switch workspace" aria-expanded={switching}>
       <span class="ws-name">{app.rootName}</span>
       <svg viewBox="0 0 16 16"><path d="M4.5 6.5l3.5 3.5 3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.3" /></svg>
     </button>
+    {#if switching}
+      <div bind:this={workspaceMenu} class="workspace-menu surface">
+        <div class="menu-title">Recent folders</div>
+        <div class="recent-list">
+          {#each recentWorkspaces.paths as path (path)}
+            <div class="recent" class:current={path === app.root}>
+              <button class="recent-open" onclick={() => openRecent(path)} title={path}>
+                <span>{nameOf(path)}</span>
+                <small>{path}</small>
+              </button>
+              <button
+                class="forget"
+                aria-label="Remove {nameOf(path)} from recent folders"
+                title="Remove from recent folders"
+                onclick={(event) => {
+                  event.stopPropagation();
+                  recentWorkspaces.remove(path);
+                }}>×</button
+              >
+            </div>
+          {:else}
+            <p class="empty">No recent folders</p>
+          {/each}
+        </div>
+        <button class="open-new" onclick={chooseNew}>
+          <svg viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.5 1.5h7.5v7.5h-13z M8 7v4 M6 9h4" fill="none" stroke="currentColor" stroke-width="1.2" /></svg>
+          Open new folder…
+        </button>
+      </div>
+    {/if}
     <button class="gear" class:active={!app.current && app.view === "settings"} title="Settings" onclick={() => app.show("settings")}>
       <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.2" /><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" /></svg>
     </button>
@@ -134,6 +187,7 @@
     border-right: 1px solid var(--border);
   }
   header {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -185,6 +239,106 @@
   }
   .workspace:hover {
     background: var(--hover);
+  }
+  .workspace.open {
+    background: var(--hover);
+  }
+  .workspace-menu {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% - 2px);
+    left: 12px;
+    width: min(340px, calc(100vw - 24px));
+    padding: 8px;
+  }
+  .menu-title {
+    padding: 4px 8px 7px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .recent-list {
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .recent {
+    display: flex;
+    align-items: center;
+    border-radius: var(--r);
+  }
+  .recent:hover,
+  .recent.current {
+    background: var(--hover);
+  }
+  .recent-open {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 7px 8px;
+    border: 0;
+    background: none;
+    color: var(--text);
+    text-align: left;
+  }
+  .recent-open span,
+  .recent-open small {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .recent-open span {
+    font-weight: 600;
+  }
+  .recent-open small {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .forget {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: none;
+    color: var(--muted);
+    font-size: 17px;
+  }
+  .forget:hover {
+    background: var(--selected);
+    color: var(--text);
+  }
+  .empty {
+    margin: 0;
+    padding: 10px 8px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .open-new {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 6px;
+    padding: 8px;
+    border: 0;
+    border-top: 1px solid var(--border);
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+  }
+  .open-new:hover {
+    background: var(--hover);
+  }
+  .open-new svg {
+    width: 16px;
+    height: 16px;
   }
   .ws-name {
     overflow: hidden;
